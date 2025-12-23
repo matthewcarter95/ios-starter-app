@@ -12,7 +12,12 @@ import LocalAuthentication
 class AuthViewController: UIViewController {
     
     private var credentialsManager = CredentialsManager(authentication: Auth0.authentication())
+    
     var onAuthSuccess: (() -> Void)?
+    
+    private var domain: String = "mobile-workshop-jq.cic-demo-platform.auth0app.com"
+    private var clientId: String = "BZ2JTe9FMYGdzCCqAYtlRjC7NKWDQxol"
+
     
 
     @IBOutlet weak var welcomeLabel: UILabel!
@@ -100,8 +105,8 @@ class AuthViewController: UIViewController {
                 usernameOrEmail: username,
                 password: password,
                 realmOrConnection: "Username-Password-Authentication", // <-- the db you are authenticating the user against.
-                audience: "https://mobile-workshop-jq.cic-demo-platform.auth0app.com/api/v2/",
-                scope: "openid profile email offline_access" 
+                audience: "https://\(domain)/api/v2/",
+                scope: "openid profile email offline_access"
             )
             .start { result in
                 switch result {
@@ -149,6 +154,10 @@ class AuthViewController: UIViewController {
                                         let code = alert.textFields?.first?.text ?? ""
                                         self.verifySMSCode(mfaToken: mfaToken, oobCode: oobCode, userOTP: code)
                                     })
+                                    alert.addAction(UIAlertAction(title: "Cancel", style: .cancel) { _ in
+                                        
+                
+                                    })
                                     self.present(alert, animated: true)
                                 }
                             }
@@ -164,7 +173,7 @@ class AuthViewController: UIViewController {
     //Fetch authenticators, for the sake of simplicity we are looking for previously configured SMS. https://auth0.com/docs/secure/multi-factor-authentication/authenticate-using-ropg-flow-with-mfa
     
     private func fetchSMSAuthenticator(mfaToken: String, completion: @escaping (String?) -> Void) {
-        guard let url = URL(string: "https://mobile-workshop-jq.cic-demo-platform.auth0app.com/mfa/authenticators") else {
+        guard let url = URL(string: "https://\(domain)/mfa/authenticators") else { // <-- REPLACE WITH YOIUR DOMAIN + /mfa/authenticators
             completion(nil)
             return
         }
@@ -202,7 +211,7 @@ class AuthViewController: UIViewController {
 
     //Send SMS challenge
     private func sendSMSChallenge(mfaToken: String, authenticatorId: String, completion: @escaping (String?) -> Void) {
-        guard let url = URL(string: "https://mobile-workshop-jq.cic-demo-platform.auth0app.com/mfa/challenge") else {
+        guard let url = URL(string: "https://\(domain)/mfa/challenge") else { // <-- REPLACE WITH YOIUR DOMAIN + /mfa/challenge
             print("❌ Invalid URL")
             completion(nil)
             return
@@ -214,7 +223,7 @@ class AuthViewController: UIViewController {
         request.setValue("Bearer \(mfaToken)", forHTTPHeaderField: "Authorization")
 
         let body: [String: Any] = [
-            "client_id": "BZ2JTe9FMYGdzCCqAYtlRjC7NKWDQxol", // <-- your app clientId
+            "client_id": clientId, // <-- replace with your app clientId
             "challenge_type": "oob",
             "authenticator_id": authenticatorId,
             "mfa_token": mfaToken
@@ -255,7 +264,7 @@ class AuthViewController: UIViewController {
     
     //Verify code
     private func verifySMSCode(mfaToken: String, oobCode: String, userOTP: String) {
-        guard let url = URL(string: "https://mobile-workshop-jq.cic-demo-platform.auth0app.com/oauth/token") else {
+        guard let url = URL(string: "https://\(domain)/oauth/token") else { // <-- REPLACE WITH YOIUR DOMAIN + /oauth/token
             print("❌ Invalid URL")
             return
         }
@@ -266,7 +275,7 @@ class AuthViewController: UIViewController {
 
         let payload: [String: Any] = [
             "grant_type": "http://auth0.com/oauth/grant-type/mfa-oob",
-            "client_id": "BZ2JTe9FMYGdzCCqAYtlRjC7NKWDQxol", // <-- your app clientId
+            "client_id": clientId, // <-- replace with your app clientId
             "mfa_token": mfaToken,
             "oob_code": oobCode,
             "binding_code": userOTP

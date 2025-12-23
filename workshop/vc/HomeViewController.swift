@@ -19,7 +19,8 @@ class HomeViewController: UIViewController {
     private var isBiometricEnabled: Bool = false
     private var isNativeFlowEnabled: Bool = false
     
-    
+    private var domain: String = "mobile-workshop-jq.cic-demo-platform.auth0app.com"
+    private var clientId: String = "BZ2JTe9FMYGdzCCqAYtlRjC7NKWDQxol"
     
     @IBOutlet weak var signInBtn: UIBarButtonItem!
     @IBOutlet weak var signOutBtn: UIBarButtonItem!
@@ -324,20 +325,20 @@ class HomeViewController: UIViewController {
         Auth0
             .webAuth()
             //.useHTTPS() // <-- Use a Universal Link callback URL on iOS 17.4+
-            //.useEphemeralSession() // <-- Use an ephemeral session. Hide the 3rd party SSO popup. 
+            .useEphemeralSession() // <-- Use an ephemeral session. Hide the 3rd party SSO popup.
             //.provider(WebAuthentication.webViewProvider()) // <-- https://github.com/auth0/Auth0.swift/blob/master/EXAMPLES.md#use-wkwebview-instead-of-aswebauthenticationsession
             //.useDPoP() // <-- https://auth0.com/docs/secure/sender-constraining/configure-sender-constraining
             //.parameters(["screen_hint": "signup"]) <-- Direct the user to a specifc screen within UL. https://github.com/auth0/Auth0.swift/blob/master/EXAMPLES.md#web-auth-signup
             .parameters(["prompt": "login"])
             .logging(enabled: true)
-            .audience("https://mobile-workshop-jq.cic-demo-platform.auth0app.com/api/v2/")
+            .audience("https://\(domain)/api/v2/") //<-- REPLACE WITH YOUR DOMAIN + /api/v2/
             .scope("openid profile email offline_access")
             .start { result in
                 switch result {
                 case .success(let credentials):
                     print("Obtained credentials: \(credentials)")
                     
-                    _ = self.credentialsManager.store(credentials: credentials)
+                    _ = self.credentialsManager.store(credentials: credentials) //<--storing the new session creds.
                     
                     self.checkCreds()
                     
