@@ -13,14 +13,40 @@ import LocalAuthentication
 
 class HomeViewController: UIViewController {
     
+    private struct Auth0ConfigLoader {
+        static func load() -> (domain: String, clientId: String)? {
+            guard
+                let url = Bundle.main.url(forResource: "Auth0", withExtension: "plist"),
+                let data = try? Data(contentsOf: url),
+                let dict = (try? PropertyListSerialization.propertyList(from: data, options: [], format: nil)) as? [String: Any],
+                let domain = dict["Domain"] as? String,
+                let clientId = dict["ClientId"] as? String,
+                !domain.isEmpty, !clientId.isEmpty
+            else { return nil }
+            return (domain, clientId)
+        }
+    }
+    
+    private lazy var domain: String = {
+        let config = Auth0ConfigLoader.load()
+        assert(config != nil, "Missing Auth0 configuration. Provide Domain and ClientId in Auth0.plist.")
+        return config?.domain ?? ""
+    }()
+    
+    private lazy var clientId: String = {
+        let config = Auth0ConfigLoader.load()
+        assert(config != nil, "Missing Auth0 configuration. Provide Domain and ClientId in Auth0.plist.")
+        return config?.clientId ?? ""
+    }()
+    
     private let credentialsManager = CredentialsManager(authentication: Auth0.authentication()) // <-- handles and store credentials. https://github.com/auth0/Auth0.swift/blob/master/EXAMPLES.md#credentials-manager-ios--macos--tvos--watchos--visionos
     private let mainStoryboard = UIStoryboard(name: "Main", bundle: nil)
     
     private var isBiometricEnabled: Bool = false
     private var isNativeFlowEnabled: Bool = false
     
-    private var domain: String = "mobile-workshop-jq.cic-demo-platform.auth0app.com"
-    private var clientId: String = "BZ2JTe9FMYGdzCCqAYtlRjC7NKWDQxol"
+//    private var domain: String = "mobile-workshop-jq.cic-demo-platform.auth0app.com"
+//    private var clientId: String = "BZ2JTe9FMYGdzCCqAYtlRjC7NKWDQxol"
     
     @IBOutlet weak var signInBtn: UIBarButtonItem!
     @IBOutlet weak var signOutBtn: UIBarButtonItem!
@@ -387,3 +413,4 @@ class HomeViewController: UIViewController {
        
     }
 }
+

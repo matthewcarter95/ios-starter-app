@@ -15,8 +15,31 @@ class AuthViewController: UIViewController {
     
     var onAuthSuccess: (() -> Void)?
     
-    private var domain: String = "mobile-workshop-jq.cic-demo-platform.auth0app.com"
-    private var clientId: String = "BZ2JTe9FMYGdzCCqAYtlRjC7NKWDQxol"
+    private struct Auth0ConfigLoader {
+        static func load() -> (domain: String, clientId: String)? {
+            guard
+                let url = Bundle.main.url(forResource: "Auth0", withExtension: "plist"),
+                let data = try? Data(contentsOf: url),
+                let dict = (try? PropertyListSerialization.propertyList(from: data, options: [], format: nil)) as? [String: Any],
+                let domain = dict["Domain"] as? String,
+                let clientId = dict["ClientId"] as? String,
+                !domain.isEmpty, !clientId.isEmpty
+            else { return nil }
+            return (domain, clientId)
+        }
+    }
+
+    private lazy var domain: String = {
+        let config = Auth0ConfigLoader.load()
+        assert(config != nil, "Missing Auth0 configuration. Provide Domain and ClientId in Auth0.plist.")
+        return config?.domain ?? ""
+    }()
+
+    private lazy var clientId: String = {
+        let config = Auth0ConfigLoader.load()
+        assert(config != nil, "Missing Auth0 configuration. Provide Domain and ClientId in Auth0.plist.")
+        return config?.clientId ?? ""
+    }()
 
     
 
