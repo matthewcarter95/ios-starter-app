@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="24412" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="2lc-R1-ufi">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="24506" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="2lc-R1-ufi">
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="24405"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="24504"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="Stack View standard spacing" minToolsVersion="9.0"/>
@@ -23,7 +23,7 @@
                                 <rect key="frame" x="0.0" y="150" width="414" height="678"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="AIS-32-Mbv">
-                                        <rect key="frame" x="0.0" y="0.0" width="414" height="522.5"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="414" height="744.5"/>
                                         <subviews>
                                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Hello user!" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="fn4-KC-mNU">
                                                 <rect key="frame" x="16" y="32" width="382" height="36"/>
@@ -34,7 +34,7 @@
                                             <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacingType="standard" translatesAutoresizingMaskIntoConstraints="NO" id="HxB-uG-yOu">
                                                 <rect key="frame" x="16" y="100" width="382" height="86"/>
                                                 <subviews>
-                                                    <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="ct6-xB-cvl">
+                                                    <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacingType="standard" translatesAutoresizingMaskIntoConstraints="NO" id="ct6-xB-cvl">
                                                         <rect key="frame" x="0.0" y="0.0" width="382" height="86"/>
                                                         <subviews>
                                                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Basic Profile" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="paY-Ww-P12">
@@ -69,7 +69,7 @@
                                                                 <nil key="highlightedColor"/>
                                                             </label>
                                                             <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="lEP-up-LUv">
-                                                                <rect key="frame" x="16" y="70" width="350" height="0.0"/>
+                                                                <rect key="frame" x="16" y="74" width="350" height="0.0"/>
                                                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                                                 <nil key="textColor"/>
                                                                 <nil key="highlightedColor"/>
@@ -83,7 +83,7 @@
                                             <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacingType="standard" translatesAutoresizingMaskIntoConstraints="NO" id="cve-3X-6Ao">
                                                 <rect key="frame" x="16" y="218" width="382" height="152"/>
                                                 <subviews>
-                                                    <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="C4W-aP-9Bs">
+                                                    <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacingType="standard" translatesAutoresizingMaskIntoConstraints="NO" id="C4W-aP-9Bs">
                                                         <rect key="frame" x="0.0" y="0.0" width="382" height="152"/>
                                                         <subviews>
                                                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Tokens" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="knM-Il-DXh">
@@ -143,10 +143,10 @@
                                                 <color key="backgroundColor" systemColor="systemGray5Color"/>
                                             </stackView>
                                             <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacingType="standard" translatesAutoresizingMaskIntoConstraints="NO" id="63c-pn-xaa">
-                                                <rect key="frame" x="16" y="402" width="382" height="88.5"/>
+                                                <rect key="frame" x="16" y="402" width="382" height="96.5"/>
                                                 <subviews>
-                                                    <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="wsM-U8-sWB">
-                                                        <rect key="frame" x="0.0" y="0.0" width="382" height="88.5"/>
+                                                    <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="16" translatesAutoresizingMaskIntoConstraints="NO" id="wsM-U8-sWB">
+                                                        <rect key="frame" x="0.0" y="0.0" width="382" height="96.5"/>
                                                         <subviews>
                                                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Protect user session with Biometrics. " textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Nnw-SN-s3X">
                                                                 <rect key="frame" x="16" y="16" width="350" height="20.5"/>
@@ -155,7 +155,7 @@
                                                                 <nil key="highlightedColor"/>
                                                             </label>
                                                             <stackView opaque="NO" contentMode="scaleToFill" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="ic7-TB-qQQ">
-                                                                <rect key="frame" x="16" y="44.5" width="350" height="28"/>
+                                                                <rect key="frame" x="16" y="52.5" width="350" height="28"/>
                                                                 <subviews>
                                                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Enable | Disable" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5cY-ky-mkV">
                                                                         <rect key="frame" x="0.0" y="0.0" width="281" height="28"/>
@@ -177,13 +177,67 @@
                                                 </subviews>
                                                 <color key="backgroundColor" systemColor="systemGray5Color"/>
                                             </stackView>
+                                            <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacingType="standard" translatesAutoresizingMaskIntoConstraints="NO" id="yjF-KI-sVH">
+                                                <rect key="frame" x="16" y="530.5" width="382" height="198"/>
+                                                <subviews>
+                                                    <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="16" translatesAutoresizingMaskIntoConstraints="NO" id="GFv-te-jQF">
+                                                        <rect key="frame" x="0.0" y="0.0" width="382" height="198"/>
+                                                        <subviews>
+                                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="MFA" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="wn2-au-V6c">
+                                                                <rect key="frame" x="16" y="16" width="350" height="29"/>
+                                                                <fontDescription key="fontDescription" type="boldSystem" pointSize="24"/>
+                                                                <nil key="textColor"/>
+                                                                <nil key="highlightedColor"/>
+                                                            </label>
+                                                            <stackView opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="oOW-hc-HoE">
+                                                                <rect key="frame" x="16" y="61" width="350" height="20"/>
+                                                                <subviews>
+                                                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" horizontalCompressionResistancePriority="1000" text="MFA Status" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Qwc-7X-rDd">
+                                                                        <rect key="frame" x="0.0" y="0.0" width="330" height="20"/>
+                                                                        <fontDescription key="fontDescription" type="system" weight="semibold" pointSize="17"/>
+                                                                        <nil key="textColor"/>
+                                                                        <nil key="highlightedColor"/>
+                                                                    </label>
+                                                                    <activityIndicatorView hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="1000" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" hidesWhenStopped="YES" style="medium" translatesAutoresizingMaskIntoConstraints="NO" id="lIZ-2F-7Li">
+                                                                        <rect key="frame" x="330" y="0.0" width="20" height="20"/>
+                                                                    </activityIndicatorView>
+                                                                </subviews>
+                                                            </stackView>
+                                                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="13w-wa-Snz">
+                                                                <rect key="frame" x="16" y="97" width="350" height="34.5"/>
+                                                                <state key="normal" title="Button"/>
+                                                                <buttonConfiguration key="configuration" style="filled" title="Enroll"/>
+                                                                <connections>
+                                                                    <action selector="enrollMfaBtnTapped:" destination="BYZ-38-t0r" eventType="touchUpInside" id="yfC-xV-jVw"/>
+                                                                </connections>
+                                                            </button>
+                                                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="WwK-q0-akC">
+                                                                <rect key="frame" x="16" y="147.5" width="350" height="34.5"/>
+                                                                <color key="tintColor" systemColor="systemRedColor"/>
+                                                                <state key="normal" title="Button"/>
+                                                                <buttonConfiguration key="configuration" style="filled" title="Delete">
+                                                                    <color key="baseBackgroundColor" systemColor="systemRedColor"/>
+                                                                </buttonConfiguration>
+                                                                <connections>
+                                                                    <action selector="deleteMfaBtnTapped:" destination="BYZ-38-t0r" eventType="touchUpInside" id="YZH-Qu-CCy"/>
+                                                                </connections>
+                                                            </button>
+                                                        </subviews>
+                                                        <edgeInsets key="layoutMargins" top="16" left="16" bottom="16" right="16"/>
+                                                    </stackView>
+                                                </subviews>
+                                                <color key="backgroundColor" systemColor="systemGray5Color"/>
+                                            </stackView>
                                         </subviews>
                                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                         <constraints>
+                                            <constraint firstAttribute="trailing" secondItem="yjF-KI-sVH" secondAttribute="trailing" constant="16" id="3U3-L2-v26"/>
+                                            <constraint firstAttribute="bottom" secondItem="yjF-KI-sVH" secondAttribute="bottom" constant="16" id="3qy-Ga-bWF"/>
+                                            <constraint firstItem="yjF-KI-sVH" firstAttribute="top" secondItem="63c-pn-xaa" secondAttribute="bottom" constant="32" id="4aQ-OM-Apz"/>
                                             <constraint firstItem="HxB-uG-yOu" firstAttribute="top" secondItem="fn4-KC-mNU" secondAttribute="bottom" constant="32" id="7l5-RA-nl6"/>
+                                            <constraint firstItem="yjF-KI-sVH" firstAttribute="leading" secondItem="AIS-32-Mbv" secondAttribute="leading" constant="16" id="8Hg-yX-O1O"/>
                                             <constraint firstItem="fn4-KC-mNU" firstAttribute="leading" secondItem="AIS-32-Mbv" secondAttribute="leading" constant="16" id="9dM-jc-7tp"/>
                                             <constraint firstItem="63c-pn-xaa" firstAttribute="top" secondItem="cve-3X-6Ao" secondAttribute="bottom" constant="32" id="GDd-EG-80t"/>
-                                            <constraint firstAttribute="bottom" secondItem="63c-pn-xaa" secondAttribute="bottom" constant="32" id="MzJ-Zr-A0C"/>
                                             <constraint firstItem="HxB-uG-yOu" firstAttribute="leading" secondItem="AIS-32-Mbv" secondAttribute="leading" constant="16" id="RD7-Ry-HLp"/>
                                             <constraint firstItem="fn4-KC-mNU" firstAttribute="top" secondItem="AIS-32-Mbv" secondAttribute="top" constant="32" id="U9T-fu-leu"/>
                                             <constraint firstItem="cve-3X-6Ao" firstAttribute="top" secondItem="HxB-uG-yOu" secondAttribute="bottom" constant="32" id="VFu-rH-L7A"/>
@@ -241,11 +295,16 @@
                     <connections>
                         <outlet property="accessTokenLabel" destination="uDp-d1-C0H" id="ZxU-UA-ilF"/>
                         <outlet property="basicInfoStackView" destination="HxB-uG-yOu" id="MTK-Zx-VKg"/>
+                        <outlet property="deleteMfaButton" destination="WwK-q0-akC" id="pRZ-dd-R5i"/>
                         <outlet property="emailLabel" destination="08j-bR-BQa" id="UaK-6O-VO7"/>
                         <outlet property="enableBiometricLabel" destination="5cY-ky-mkV" id="KXV-DM-Eky"/>
                         <outlet property="enableBiometricSwitch" destination="8H4-QL-Bgz" id="Yep-Je-WXa"/>
+                        <outlet property="enrollMfaButton" destination="13w-wa-Snz" id="9vI-ap-Ayz"/>
                         <outlet property="helloLabel" destination="fn4-KC-mNU" id="vJQ-Ia-vjk"/>
                         <outlet property="idTokenLabel" destination="KpP-T2-Ryz" id="iKy-5f-qAB"/>
+                        <outlet property="mfaActivityIndicator" destination="lIZ-2F-7Li" id="MoL-J9-E7G"/>
+                        <outlet property="mfaStackView" destination="yjF-KI-sVH" id="3DV-bz-umP"/>
+                        <outlet property="mfaStatusLabel" destination="Qwc-7X-rDd" id="m1e-VM-HOF"/>
                         <outlet property="phLabel" destination="lEP-up-LUv" id="L8b-eM-zao"/>
                         <outlet property="securityStackView" destination="63c-pn-xaa" id="HI8-JG-Q1Z"/>
                         <outlet property="signInBtn" destination="1Yh-Zu-zsE" id="gaS-q4-MB7"/>
@@ -560,13 +619,16 @@
         <image name="square.and.arrow.up" catalog="system" width="110" height="128"/>
         <image name="wrench.and.screwdriver.fill" catalog="system" width="128" height="119"/>
         <namedColor name="AccentColor">
-            <color red="0.39311042380551769" green="0.096612964642012578" blue="0.4490806502525253" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="0.39300000667572021" green="0.097000002861022949" blue="0.44900000095367432" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>
         <systemColor name="systemGray5Color">
             <color red="0.8980392157" green="0.8980392157" blue="0.91764705879999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+        <systemColor name="systemRedColor">
+            <color red="1" green="0.23137254900000001" blue="0.18823529410000001" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
     </resources>
 </document>

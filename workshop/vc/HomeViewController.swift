@@ -44,6 +44,11 @@ class HomeViewController: UIViewController {
     
     private var isBiometricEnabled: Bool = false
     private var isNativeFlowEnabled: Bool = false
+
+    // MFA Management State
+    private var enrolledMfaMethodId: String?
+    private var currentMfaAccessToken: String?
+    private var currentEnrollmentChallenge: PhoneEnrollmentChallenge?
     
 //    private var domain: String = "mobile-workshop-jq.cic-demo-platform.auth0app.com"
 //    private var clientId: String = "BZ2JTe9FMYGdzCCqAYtlRjC7NKWDQxol"
@@ -72,6 +77,13 @@ class HomeViewController: UIViewController {
     
     @IBOutlet weak var enableBiometricLabel: UILabel!
     @IBOutlet weak var enableBiometricSwitch: UISwitch!
+
+    // MFA Management Section
+    @IBOutlet weak var mfaStackView: UIStackView!
+    @IBOutlet weak var mfaStatusLabel: UILabel!
+    @IBOutlet weak var enrollMfaButton: UIButton!
+    @IBOutlet weak var deleteMfaButton: UIButton!
+    @IBOutlet weak var mfaActivityIndicator: UIActivityIndicatorView!
     
     
     @IBAction func enableBiometricSwitchTapped(_ sender: UISwitch) {
@@ -97,8 +109,16 @@ class HomeViewController: UIViewController {
             setBiometricAuthEnabled(sender.isOn)
         }
     }
-    
-    
+
+    @IBAction func enrollMfaBtnTapped(_ sender: UIButton) {
+        startMfaEnrollment()
+    }
+
+    @IBAction func deleteMfaBtnTapped(_ sender: UIButton) {
+        confirmDeleteMfa()
+    }
+
+
     @IBAction func signInBtnTapped(_ sender: UIBarButtonItem) {
         
         if isNativeFlowEnabled {
@@ -130,6 +150,9 @@ class HomeViewController: UIViewController {
         
         securityStackView.layer.cornerRadius = 16
         securityStackView.clipsToBounds = true
+        
+        mfaStackView.layer.cornerRadius = 16
+        mfaStackView.clipsToBounds = true
         
         isBiometricEnabled =  UserDefaults.standard.bool(forKey: "isBiometricEnabled")
         enableBiometricSwitch.isOn =  isBiometricEnabled
@@ -243,29 +266,38 @@ class HomeViewController: UIViewController {
             self.emailLabel.text = user?.email
             
             self.securityStackView.isHidden = false
-            
+
             self.signOutBtn.isHidden = false
             self.signInBtn.isHidden = true
+
+            // Check MFA enrollment status
+            self.checkMfaEnrollmentStatus()
         }
-        
-        
+
+
     }
     
     private func clearLayouts()  {
-        
+
         DispatchQueue.main.async {
-            
+
             self.helloLabel.text = "Hello user!"
-            
+
             self.idTokenLabel.text = ""
             self.accessTokenLabel.text = ""
             //self.phLabel.text = ""
             self.unLabel.text = ""
             self.uuidLabel.text = ""
             self.emailLabel.text = ""
-            
+
             self.securityStackView.isHidden = true
-            
+
+            // Hide MFA section when signed out
+            self.mfaStackView?.isHidden = true
+            self.enrolledMfaMethodId = nil
+            self.currentMfaAccessToken = nil
+            self.currentEnrollmentChallenge = nil
+
             self.signOutBtn.isHidden = true
             self.signInBtn.isHidden = false
         }
@@ -394,23 +426,360 @@ class HomeViewController: UIViewController {
     
     
     private func signOut(){
-        
+
 //        Auth0.webAuth()
 //            //.useHTTPS()
 //            .clearSession { result in
 //            // ...
 //        }
-        
+
         if !credentialsManager.clear() {
             _ = self.credentialsManager.clear() // <-- clears the session locally only. Read more: https://github.com/auth0/Auth0.swift/blob/master/EXAMPLES.md#logout
         }
-        
-        
-        
+
+
+
         clearLayouts()
-        
+
         UserDefaults.standard.set(false, forKey: "isBiometricEnabled")
-       
+
+    }
+
+    // MARK: - MFA Management (My Account API)
+
+    private func checkMfaEnrollmentStatus() {
+        guard credentialsManager.canRenew() else { return }
+
+        // Show loading state
+        DispatchQueue.main.async {
+            self.mfaStackView?.isHidden = false
+            self.mfaActivityIndicator?.startAnimating()
+            self.mfaStatusLabel?.isHidden = true
+            self.enrollMfaButton?.isHidden = true
+            self.deleteMfaButton?.isHidden = true
+        }
+
+        // Get My Account API credentials via token exchange
+        getMyAccountCredentials { [weak self] accessToken in
+            guard let self = self, let accessToken = accessToken else {
+                DispatchQueue.main.async {
+                    self?.mfaActivityIndicator?.stopAnimating()
+                    self?.enrollMfaButton?.isHidden = false
+                    self?.mfaStatusLabel?.text = "Unable to check MFA status"
+                    self?.mfaStatusLabel?.isHidden = false
+                }
+                return
+            }
+
+            self.currentMfaAccessToken = accessToken
+            self.fetchAuthenticationMethods(accessToken: accessToken)
+        }
+    }
+
+    private func getMyAccountCredentials(completion: @escaping (String?) -> Void) {
+        // Use Auth0.swift SDK's built-in apiCredentials method for My Account API
+        let audience = "https://\(domain)/me/"
+        let scope = "read:me:authentication_methods create:me:authentication_methods delete:me:authentication_methods"
+
+        print("📤 Getting My Account API credentials via SDK...")
+
+        credentialsManager.apiCredentials(forAudience: audience, scope: scope) { result in
+            switch result {
+            case .success(let apiCredentials):
+                print("✅ Got My Account API token via SDK")
+                completion(apiCredentials.accessToken)
+            case .failure(let error):
+                print("❌ Failed to get API credentials: \(error)")
+                completion(nil)
+            }
+        }
+    }
+
+    private func fetchAuthenticationMethods(accessToken: String) {
+        print("📤 Fetching authentication methods via SDK...")
+
+        Auth0
+            .myAccount(token: accessToken)
+            .authenticationMethods
+            .getAuthenticationMethods()
+            .start { [weak self] result in
+                guard let self = self else { return }
+
+                DispatchQueue.main.async {
+                    self.mfaActivityIndicator?.stopAnimating()
+                }
+
+                switch result {
+                case .success(let methods):
+                    print("📨 Found \(methods.count) authentication methods")
+
+                    // Look for phone/SMS authenticator
+                    var smsMethodId: String?
+                    for method in methods {
+                        print("→ Method type: \(method.type), id: \(method.id)")
+                        if method.type == "phone" {
+                            smsMethodId = method.id
+                            break
+                        }
+                    }
+
+                    if let methodId = smsMethodId {
+                        print("✅ SMS MFA is enrolled. Method ID: \(methodId)")
+                        self.updateMfaUI(enrolled: true, methodId: methodId)
+                    } else {
+                        print("ℹ️ No SMS MFA enrolled")
+                        self.updateMfaUI(enrolled: false, methodId: nil)
+                    }
+
+                case .failure(let error):
+                    print("❌ Fetch auth methods error: \(error)")
+                    self.updateMfaUI(enrolled: false, methodId: nil)
+                }
+            }
+    }
+
+    private func updateMfaUI(enrolled: Bool, methodId: String?) {
+        DispatchQueue.main.async {
+            self.enrolledMfaMethodId = methodId
+
+            if enrolled {
+                self.mfaStatusLabel?.text = "SMS MFA Enrolled ✓"
+                self.mfaStatusLabel?.textColor = .systemGreen
+                self.mfaStatusLabel?.isHidden = false
+                self.enrollMfaButton?.isHidden = true
+                self.deleteMfaButton?.isHidden = false
+            } else {
+                self.mfaStatusLabel?.text = "Not Enrolled"
+                self.mfaStatusLabel?.textColor = .secondaryLabel
+                self.mfaStatusLabel?.isHidden = false
+                self.enrollMfaButton?.isHidden = false
+                self.deleteMfaButton?.isHidden = true
+            }
+        }
+    }
+
+    private func startMfaEnrollment() {
+        guard let accessToken = currentMfaAccessToken else {
+            // Need to get token first
+            getMyAccountCredentials { [weak self] token in
+                guard let self = self, let token = token else {
+                    self?.showAlert(message: "Failed to get API credentials. Please try again.")
+                    return
+                }
+                self.currentMfaAccessToken = token
+                self.showPhoneNumberDialog()
+            }
+            return
+        }
+
+        showPhoneNumberDialog()
+    }
+
+    private func showPhoneNumberDialog() {
+        DispatchQueue.main.async {
+            let alert = UIAlertController(
+                title: "Enroll SMS MFA",
+                message: "Enter your phone number to receive verification codes (include country code, e.g. +1)",
+                preferredStyle: .alert
+            )
+            alert.addTextField { textField in
+                textField.placeholder = "+1 555 123 4567"
+                textField.keyboardType = .phonePad
+            }
+            alert.addAction(UIAlertAction(title: "Continue", style: .default) { [weak self] _ in
+                let phone = alert.textFields?.first?.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                if !phone.isEmpty {
+                    self?.enrollPhone(phoneNumber: phone)
+                } else {
+                    self?.showAlert(message: "Please enter a valid phone number.")
+                }
+            })
+            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+            alert.view.tintColor = .accent
+            self.present(alert, animated: true)
+        }
+    }
+
+    private func enrollPhone(phoneNumber: String) {
+        guard let accessToken = currentMfaAccessToken else {
+            showAlert(message: "Session expired. Please try again.")
+            return
+        }
+
+        DispatchQueue.main.async {
+            self.enrollMfaButton?.isEnabled = false
+            self.mfaActivityIndicator?.startAnimating()
+        }
+
+        print("📤 Enrolling phone via SDK: \(phoneNumber.prefix(4))****")
+
+        Auth0
+            .myAccount(token: accessToken)
+            .authenticationMethods
+            .enrollPhone(phoneNumber: phoneNumber, preferredAuthenticationMethod: .sms)
+            .start { [weak self] result in
+                guard let self = self else { return }
+
+                switch result {
+                case .success(let enrollmentChallenge):
+                    //let challengeId = enrollmentChallenge.challenge.id
+                    print("✅ SMS sent for enrollment.")
+                    self.currentEnrollmentChallenge = enrollmentChallenge
+                    self.showMfaOtpDialog()
+
+                case .failure(let error):
+                    print("❌ Enrollment error: \(error)")
+                    DispatchQueue.main.async {
+                        self.enrollMfaButton?.isEnabled = true
+                        self.mfaActivityIndicator?.stopAnimating()
+                        self.showAlert(message: "Enrollment failed: \(error.localizedDescription)")
+                    }
+                }
+            }
+    }
+
+    private func showMfaOtpDialog() {
+        DispatchQueue.main.async {
+            self.mfaActivityIndicator?.stopAnimating()
+
+            let alert = UIAlertController(
+                title: "Verify Your Phone",
+                message: "Enter the 6-digit code sent to your phone",
+                preferredStyle: .alert
+            )
+            alert.addTextField { textField in
+                textField.placeholder = "123456"
+                textField.keyboardType = .numberPad
+            }
+            alert.addAction(UIAlertAction(title: "Verify", style: .default) { [weak self] _ in
+                let otp = alert.textFields?.first?.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                if !otp.isEmpty {
+                    self?.verifyEnrollmentOtp(otp: otp)
+                } else {
+                    self?.showAlert(message: "Please enter the verification code.")
+                    self?.showMfaOtpDialog()
+                }
+            })
+            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel) { [weak self] _ in
+                self?.enrollMfaButton?.isEnabled = true
+            })
+            alert.view.tintColor = .accent
+            self.present(alert, animated: true)
+        }
+    }
+
+    private func verifyEnrollmentOtp(otp: String) {
+        guard let accessToken = currentMfaAccessToken,
+              let challenge = currentEnrollmentChallenge else {
+            showAlert(message: "Session expired. Please try again.")
+            enrollMfaButton?.isEnabled = true
+            return
+        }
+
+        DispatchQueue.main.async {
+            self.mfaActivityIndicator?.startAnimating()
+        }
+
+        print("📤 Verifying enrollment OTP via SDK...")
+
+        Auth0
+            .myAccount(token: accessToken)
+            .authenticationMethods
+            .confirmPhoneEnrollment(id: challenge.authenticationId,
+                                    authSession: challenge.authenticationSession,
+                                    otpCode: otp)
+            .start { [weak self] result in
+                guard let self = self else { return }
+
+                DispatchQueue.main.async {
+                    self.mfaActivityIndicator?.stopAnimating()
+                    self.enrollMfaButton?.isEnabled = true
+                }
+
+                switch result {
+                case .success(let authenticationMethod):
+                    print("✅ MFA enrollment verified. Method ID: \(authenticationMethod.id)")
+                    self.updateMfaUI(enrolled: true, methodId: authenticationMethod.id)
+                    DispatchQueue.main.async {
+                        self.showAlert(message: "SMS MFA enrolled successfully!")
+                    }
+
+                case .failure(let error):
+                    print("❌ Verify error: \(error)")
+                    DispatchQueue.main.async {
+                        self.showAlert(message: "Invalid verification code. Please try again.")
+                        self.showMfaOtpDialog()
+                    }
+                }
+            }
+    }
+
+    private func confirmDeleteMfa() {
+        let alert = UIAlertController(
+            title: "Remove SMS MFA",
+            message: "Are you sure you want to remove SMS verification from your account?",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "Remove", style: .destructive) { [weak self] _ in
+            // If biometrics enabled, require authentication first
+            if self?.isBiometricEnabled == true {
+                self?.authenticateWithBiometricsIfNeeded { success in
+                    if success {
+                        self?.deleteAuthenticationMethod()
+                    } else {
+                        self?.showAlert(message: "Biometric authentication required to remove MFA.")
+                    }
+                }
+            } else {
+                self?.deleteAuthenticationMethod()
+            }
+        })
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alert.view.tintColor = .accent
+        present(alert, animated: true)
+    }
+
+    private func deleteAuthenticationMethod() {
+        guard let accessToken = currentMfaAccessToken,
+              let methodId = enrolledMfaMethodId else {
+            showAlert(message: "Unable to delete MFA. Please try again.")
+            return
+        }
+
+        DispatchQueue.main.async {
+            self.deleteMfaButton?.isEnabled = false
+            self.mfaActivityIndicator?.startAnimating()
+        }
+
+        print("📤 Deleting MFA method via SDK: \(methodId)")
+
+        Auth0
+            .myAccount(token: accessToken)
+            .authenticationMethods
+            .deleteAuthenticationMethod(by: methodId)
+            .start { [weak self] result in
+                guard let self = self else { return }
+
+                DispatchQueue.main.async {
+                    self.mfaActivityIndicator?.stopAnimating()
+                    self.deleteMfaButton?.isEnabled = true
+                }
+
+                switch result {
+                case .success:
+                    print("✅ MFA deleted successfully")
+                    self.updateMfaUI(enrolled: false, methodId: nil)
+                    DispatchQueue.main.async {
+                        self.showAlert(message: "SMS MFA removed successfully.")
+                    }
+
+                case .failure(let error):
+                    print("❌ Delete error: \(error)")
+                    DispatchQueue.main.async {
+                        self.showAlert(message: "Failed to remove MFA: \(error.localizedDescription)")
+                    }
+                }
+            }
     }
 }
 

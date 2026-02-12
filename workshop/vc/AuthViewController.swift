@@ -145,8 +145,19 @@ class AuthViewController: UIViewController {
 
                 case .failure(let error):
                     print("❌ Login failed: \(error)")
-                    
-                    //MFA is required to continue
+
+                    // Check for MFA enrollment required (user has no MFA set up)
+                    if let authErr = error as? Auth0.AuthenticationError,
+                       let code = authErr.info["error"] as? String,
+                       code == "association_required",
+                       let mfaToken = authErr.info["mfa_token"] as? String {
+
+                        print("📱 MFA enrollment required. mfa_token: \(mfaToken)")
+                        self.handleMfaEnrollment(mfaToken: mfaToken)
+                        return
+                    }
+
+                    // MFA is required to continue (user already has MFA enrolled)
                     if let authErr = error as? Auth0.AuthenticationError,
                        let code = authErr.info["error"] as? String,
                        code == "mfa_required",
@@ -398,15 +409,128 @@ class AuthViewController: UIViewController {
     }
     
     private func showAlert(message: String) {
-        
+
         DispatchQueue.main.async {
             let alert = UIAlertController(title: "Alert", message: message, preferredStyle: .alert)
             alert.view.tintColor = .accent
             alert.addAction(UIAlertAction(title: "OK", style: .default))
             self.present(alert, animated: true)
         }
-        
-        
+
+
+    }
+
+    // MARK: - MFA Enrollment (for users without MFA set up)
+
+    private func handleMfaEnrollment(mfaToken: String) {
+        DispatchQueue.main.async {
+            let alert = UIAlertController(
+                title: "Set Up SMS Verification",
+                message: "Enter your phone number to receive verification codes (include country code, e.g. +1)",
+                preferredStyle: .alert
+            )
+            alert.addTextField { textField in
+                textField.placeholder = "+1 555 123 4567"
+                textField.keyboardType = .phonePad
+            }
+            alert.addAction(UIAlertAction(title: "Continue", style: .default) { _ in
+                let phone = alert.textFields?.first?.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                if !phone.isEmpty {
+                    self.enrollPhoneNumber(mfaToken: mfaToken, phoneNumber: phone)
+                } else {
+                    self.showAlert(message: "Please enter a valid phone number.")
+                    self.handleMfaEnrollment(mfaToken: mfaToken)
+                }
+            })
+            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel) { _ in
+                self.showAlert(message: "MFA enrollment is required to sign in.")
+            })
+            alert.view.tintColor = .accent
+            self.present(alert, animated: true)
+        }
+    }
+
+    private func enrollPhoneNumber(mfaToken: String, phoneNumber: String) {
+        guard let url = URL(string: "https://\(domain)/mfa/associate") else {
+            print("❌ Invalid URL for /mfa/associate")
+            return
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(mfaToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let body: [String: Any] = [
+            "authenticator_types": ["oob"],
+            "oob_channels": ["sms"],
+            "phone_number": phoneNumber
+        ]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+        print("📤 Enrolling phone number: \(phoneNumber.prefix(4))****")
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                print("❌ Enrollment request error: \(error)")
+                DispatchQueue.main.async {
+                    self.showAlert(message: "Enrollment failed: \(error.localizedDescription)")
+                    self.handleMfaEnrollment(mfaToken: mfaToken)
+                }
+                return
+            }
+
+            if let httpRes = response as? HTTPURLResponse {
+                print("🧮 /mfa/associate HTTP Status: \(httpRes.statusCode)")
+            }
+
+            if let data = data, let raw = String(data: data, encoding: .utf8) {
+                print("📨 /mfa/associate response: \(raw)")
+            }
+
+            guard let data = data,
+                  let result = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let oobCode = result["oob_code"] as? String else {
+                print("❌ Could not extract oob_code from /mfa/associate response")
+                DispatchQueue.main.async {
+                    self.showAlert(message: "Enrollment failed. Please try again with a valid phone number.")
+                    self.handleMfaEnrollment(mfaToken: mfaToken)
+                }
+                return
+            }
+
+            print("✅ SMS sent for enrollment. oob_code received.")
+            self.showEnrollmentOtpDialog(mfaToken: mfaToken, oobCode: oobCode)
+        }.resume()
+    }
+
+    private func showEnrollmentOtpDialog(mfaToken: String, oobCode: String) {
+        DispatchQueue.main.async {
+            let alert = UIAlertController(
+                title: "Verify Your Phone",
+                message: "Enter the 6-digit code sent to your phone",
+                preferredStyle: .alert
+            )
+            alert.addTextField { textField in
+                textField.placeholder = "123456"
+                textField.keyboardType = .numberPad
+            }
+            alert.addAction(UIAlertAction(title: "Verify", style: .default) { _ in
+                let otp = alert.textFields?.first?.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                if !otp.isEmpty {
+                    // Reuse existing verifySMSCode method
+                    self.verifySMSCode(mfaToken: mfaToken, oobCode: oobCode, userOTP: otp)
+                } else {
+                    self.showAlert(message: "Please enter the verification code.")
+                    self.showEnrollmentOtpDialog(mfaToken: mfaToken, oobCode: oobCode)
+                }
+            })
+            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel) { _ in
+                self.showAlert(message: "MFA enrollment cancelled.")
+            })
+            alert.view.tintColor = .accent
+            self.present(alert, animated: true)
+        }
     }
 
 }
