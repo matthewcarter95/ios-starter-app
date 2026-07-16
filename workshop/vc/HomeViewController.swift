@@ -50,8 +50,7 @@ class HomeViewController: UIViewController {
     private var currentMfaAccessToken: String?
     private var currentEnrollmentChallenge: PhoneEnrollmentChallenge?
     
-//    private var domain: String = "mobile-workshop-jq.cic-demo-platform.auth0app.com"
-//    private var clientId: String = "BZ2JTe9FMYGdzCCqAYtlRjC7NKWDQxol"
+
     
     @IBOutlet weak var signInBtn: UIBarButtonItem!
     @IBOutlet weak var signOutBtn: UIBarButtonItem!

@@ -94,18 +94,7 @@ class AuthViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        // Do any additional setup after loading the view.
-//        signUpUntextField.layer.cornerRadius = 8
-//        signUpUntextField.clipsToBounds = true
-//        
-//        signUpPwdtextField.layer.cornerRadius = 8
-//        signUpPwdtextField.clipsToBounds = true
-//
-//        signInUntextField.layer.cornerRadius = 8
-//        signInUntextField.clipsToBounds = true
-//
-//        signInPwdtextField.layer.cornerRadius = 8
-//        signInPwdtextField.clipsToBounds = true
+ 
 
         
     }
@@ -127,7 +116,7 @@ class AuthViewController: UIViewController {
             .login(
                 usernameOrEmail: username,
                 password: password,
-                realmOrConnection: "Username-Password-Authentication", // <-- the db you are authenticating the user against.
+                realmOrConnection: "Username-Password-Authentication", // <-- the db you are using.
                 audience: "https://\(domain)/api/v2/",
                 scope: "openid profile email offline_access"
             )
@@ -207,7 +196,7 @@ class AuthViewController: UIViewController {
     //Fetch authenticators, for the sake of simplicity we are looking for previously configured SMS. https://auth0.com/docs/secure/multi-factor-authentication/authenticate-using-ropg-flow-with-mfa
     
     private func fetchSMSAuthenticator(mfaToken: String, completion: @escaping (String?) -> Void) {
-        guard let url = URL(string: "https://\(domain)/mfa/authenticators") else { // <-- REPLACE WITH YOIUR DOMAIN + /mfa/authenticators
+        guard let url = URL(string: "https://\(domain)/mfa/authenticators") else { // <-- YOUR DOMAIN + /mfa/authenticators
             completion(nil)
             return
         }
@@ -245,7 +234,7 @@ class AuthViewController: UIViewController {
 
     //Send SMS challenge
     private func sendSMSChallenge(mfaToken: String, authenticatorId: String, completion: @escaping (String?) -> Void) {
-        guard let url = URL(string: "https://\(domain)/mfa/challenge") else { // <-- REPLACE WITH YOIUR DOMAIN + /mfa/challenge
+        guard let url = URL(string: "https://\(domain)/mfa/challenge") else { // <-- YOUR DOMAIN + /mfa/challenge
             print("❌ Invalid URL")
             completion(nil)
             return
@@ -257,7 +246,7 @@ class AuthViewController: UIViewController {
         request.setValue("Bearer \(mfaToken)", forHTTPHeaderField: "Authorization")
 
         let body: [String: Any] = [
-            "client_id": clientId, // <-- replace with your app clientId
+            "client_id": clientId, // <-- your app clientId
             "challenge_type": "oob",
             "authenticator_id": authenticatorId,
             "mfa_token": mfaToken
