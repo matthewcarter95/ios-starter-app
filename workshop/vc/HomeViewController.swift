@@ -10,6 +10,7 @@ import UIKit
 import Auth0
 import JWTDecode
 import LocalAuthentication
+import WebKit
 
 class HomeViewController: UIViewController {
     
@@ -45,6 +46,13 @@ class HomeViewController: UIViewController {
     private var isBiometricEnabled: Bool = false
     private var isNativeFlowEnabled: Bool = false
 
+    // Domain that owns the auth0_session_transfer_token cookie. Must match the
+    // Auth0 host the web backend redirects /authorize to (use the custom domain
+    // if your backend points there).
+    private var ssoCookieDomain: String { domain }
+    private let ssoStartURL = "https://YOUR-WEB-APP/context/set"
+
+    private weak var ssoWebViewController: UIViewController?
     // MFA Management State
     private var enrolledMfaMethodId: String?
     private var currentMfaAccessToken: String?
@@ -61,6 +69,18 @@ class HomeViewController: UIViewController {
     @IBOutlet weak var basicInfoStackView: UIStackView!
     @IBOutlet weak var tokensStackView: UIStackView!
     @IBOutlet weak var securityStackView: UIStackView!
+
+    private lazy var continueToWebButton: UIButton = {
+        var config = UIButton.Configuration.filled()
+        config.title = "Continue to Web →"
+        config.cornerStyle = .medium
+        config.baseBackgroundColor = .accent
+        let button = UIButton(configuration: config, primaryAction: UIAction { [weak self] _ in
+            self?.continueToWebTapped()
+        })
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
     
     
     @IBOutlet weak var emailLabel: UILabel!
@@ -149,6 +169,9 @@ class HomeViewController: UIViewController {
         
         securityStackView.layer.cornerRadius = 16
         securityStackView.clipsToBounds = true
+
+        installContinueToWebButton()
+
         
         mfaStackView.layer.cornerRadius = 16
         mfaStackView.clipsToBounds = true
@@ -367,6 +390,150 @@ class HomeViewController: UIViewController {
     
     
     
+    private func installContinueToWebButton() {
+        guard let parent = basicInfoStackView.superview else { return }
+        parent.addSubview(continueToWebButton)
+
+        if let existing = parent.constraints.first(where: {
+            ($0.firstItem === tokensStackView && $0.firstAttribute == .top &&
+             $0.secondItem === basicInfoStackView && $0.secondAttribute == .bottom) ||
+            ($0.firstItem === basicInfoStackView && $0.firstAttribute == .bottom &&
+             $0.secondItem === tokensStackView && $0.secondAttribute == .top)
+        }) {
+            existing.isActive = false
+        }
+
+        NSLayoutConstraint.activate([
+            continueToWebButton.topAnchor.constraint(equalTo: basicInfoStackView.bottomAnchor, constant: 32),
+            continueToWebButton.leadingAnchor.constraint(equalTo: parent.leadingAnchor, constant: 16),
+            continueToWebButton.trailingAnchor.constraint(equalTo: parent.trailingAnchor, constant: -16),
+            tokensStackView.topAnchor.constraint(equalTo: continueToWebButton.bottomAnchor, constant: 32)
+        ])
+    }
+
+    private func continueToWebTapped() {
+        credentialsManager.ssoCredentials { [weak self] result in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                switch result {
+                case .success(let sso):
+                    self.presentSSOWebView(with: sso)
+                case .failure(let error):
+                    print("SSO exchange failed: \(error)")
+                    self.showAlert(message: "SSO failed: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+
+    private func presentSSOWebView(with sso: SSOCredentials) {
+        guard let cookie = HTTPCookie(properties: [
+            .domain: ssoCookieDomain,
+            .path: "/",
+            .name: "auth0_session_transfer_token",
+            .value: sso.sessionTransferToken,
+            .expires: sso.expiresIn,
+            .secure: true
+        ]) else {
+            showAlert(message: "Failed to create SSO cookie")
+            return
+        }
+
+        guard var components = URLComponents(string: ssoStartURL) else { return }
+        var queryItems = components.queryItems ?? []
+        queryItems.append(URLQueryItem(name: "session_token", value: sso.sessionTransferToken))
+        components.queryItems = queryItems
+        guard let url = components.url else { return }
+
+        let webView = WKWebView(frame: .zero, configuration: WKWebViewConfiguration())
+        if #available(iOS 16.4, *) {
+            webView.isInspectable = true
+        }
+        webView.navigationDelegate = self
+        let cookieStore = webView.configuration.websiteDataStore.httpCookieStore
+
+        cookieStore.setCookie(cookie) { [weak self] in
+            guard let self = self else { return }
+            print("SSO cookie set on \(self.ssoCookieDomain), expires \(sso.expiresIn)")
+            cookieStore.getAllCookies { all in
+                let relevant = all.filter { $0.domain.contains(ssoCookieDomain) || $0.domain.contains("auth0app.com") }
+                print("WKWebView cookie store has \(relevant.count) relevant cookie(s):")
+                for c in relevant {
+                    let valuePreview = c.value.prefix(16)
+                    print("  - \(c.name)=\(valuePreview)... domain=\(c.domain) path=\(c.path) secure=\(c.isSecure) httpOnly=\(c.isHTTPOnly) expires=\(c.expiresDate?.description ?? "session")")
+                }
+            }
+            print("Loading SSO URL: \(url.absoluteString)")
+            webView.load(URLRequest(url: url))
+
+            let vc = UIViewController()
+            let container = UIView(frame: UIScreen.main.bounds)
+            vc.view = container
+            vc.modalPresentationStyle = .automatic
+
+            webView.frame = container.bounds
+            webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            container.addSubview(webView)
+
+            let buttonSize: CGFloat = 32
+            let closeButton = UIButton(type: .system)
+            closeButton.frame = CGRect(
+                x: container.bounds.width - buttonSize - 16,
+                y: 16,
+                width: buttonSize,
+                height: buttonSize
+            )
+            closeButton.layer.cornerRadius = buttonSize / 2
+            closeButton.backgroundColor = .black
+            closeButton.tintColor = .white
+            let symbolConfig = UIImage.SymbolConfiguration(pointSize: 14, weight: .bold)
+            closeButton.setImage(UIImage(systemName: "xmark", withConfiguration: symbolConfig), for: .normal)
+            closeButton.addTarget(self, action: #selector(self.dismissSSOWebView), for: .touchUpInside)
+            closeButton.autoresizingMask = [.flexibleLeftMargin, .flexibleBottomMargin]
+            container.addSubview(closeButton)
+
+            self.ssoWebViewController = vc
+            self.present(vc, animated: true)
+        }
+    }
+
+    @objc private func dismissSSOWebView() {
+        ssoWebViewController?.dismiss(animated: true)
+    }
+}
+
+extension HomeViewController: WKNavigationDelegate {
+    func webView(_ webView: WKWebView,
+                 decidePolicyFor navigationAction: WKNavigationAction,
+                 decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        let url = navigationAction.request.url
+        print("[SSO] navigating to: \(url?.absoluteString ?? "nil")")
+
+        if let host = url?.host, host == ssoCookieDomain {
+            webView.configuration.websiteDataStore.httpCookieStore.getAllCookies { cookies in
+                let relevant = cookies.filter { $0.domain == self.ssoCookieDomain }
+                print("[SSO] cookies that will be sent to \(host): \(relevant.count)")
+                for c in relevant {
+                    print("[SSO]   \(c.name)=\(c.value.prefix(20))... secure=\(c.isSecure) path=\(c.path) expires=\(c.expiresDate?.description ?? "session")")
+                }
+            }
+        }
+
+        decisionHandler(.allow)
+    }
+
+    func webView(_ webView: WKWebView,
+                 didFailProvisionalNavigation navigation: WKNavigation!,
+                 withError error: Error) {
+        print("[SSO] provisional navigation failed: \(error.localizedDescription)")
+    }
+
+    func webView(_ webView: WKWebView,
+                 didFail navigation: WKNavigation!,
+                 withError error: Error) {
+        print("[SSO] navigation failed: \(error.localizedDescription)")
+    }
+
     private func showAlert(message: String) {
         let alert = UIAlertController(title: "Alert", message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default))

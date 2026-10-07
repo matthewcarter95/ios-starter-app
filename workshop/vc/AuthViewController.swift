@@ -94,9 +94,19 @@ class AuthViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
- 
+        // Username field: enables Password Autofill / shared web credentials lookup.
+        signInUntextField.textContentType = .username
+        signInUntextField.keyboardType = .emailAddress
+        signInUntextField.autocorrectionType = .no
+        signInUntextField.autocapitalizationType = .none
+        signInUntextField.spellCheckingType = .no
 
-        
+        // Password field: secure entry + autofill suggestions from Keychain/iCloud.
+        signInPwdtextField.textContentType = .password
+        signInPwdtextField.isSecureTextEntry = true
+        signInPwdtextField.autocorrectionType = .no
+        signInPwdtextField.autocapitalizationType = .none
+        signInPwdtextField.spellCheckingType = .no
     }
     
 
